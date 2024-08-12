@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat avec Connexion</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <header>    <p> Instruction : cliquez une fois sur un sms pour répondre et ensuite actualiser pour voir la différence en couleur ce chat est destiné aux codeur du mapane Amusez vous !</p></header>
+    <style>
+                p { color: yellow;
+            
+                        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f4f4f4;
+             background-image: url('https://wallpaper.forfun.com/fetch/a2/a233f0c2dd4a36382a793014cc711207.jpeg'); /* Ajoutez l'URL de votre image ici */
+            background-size: cover;
+        }
+        .chat-container {
+            width: 90%;
+            max-width: 400px;
+            height: 90%;
+            background: black;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+        }
+        .header {
+            background: #0078d4;
+            color: #fff;
+            padding: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #ddd;
+        }
+        .header img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        .header .username {
+            font-weight: bold;
+        }
+        .header .edit-username {
+            background: none;
+            border: none;
+            color: #fff;
+            cursor: pointer;
+        }
+        .chat-box {
+            flex: 1;
+            padding: 10px;
+            overflow-y: auto;
+            background: #e0e0e0;
+        }
+        .message {
+            margin-bottom: 10px;
+            padding: 10px;
+            background: #fff;
+            border-radius: 10px;
+            max-width: 80%;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+        .message.user {
+            background: #dcf8c6;
+            align-self: flex-end;
+        }
+        .message.reply {
+            background: #ffffcc;
+        }
+        .message img {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        .message p {
+            margin: 0;
+        }
+        .emoji-picker {
+            position: absolute;
+            bottom: 60px;
+            right: 10px;
+            display: none;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+        }
+        .emoji-picker button {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+        }
+        .chat-input {
+            display: flex;
+            align-items: center;
+            border-top: 1px solid #ddd;
+        }
+        .chat-input input {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 0;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        .chat-input button {
+            background: #0078d4;
+            border: none;
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 0;
+            cursor: pointer;
+        }
+        .chat-input button:hover {
+            background: #005a9e;
+        }
+        .modal-header {
+            background: #0078d4;
+            color: #fff;
+        }
+        .verification-tab {
+            display: none;
+            padding: 10px;
+            border-top: 1px solid #ddd;
+            background: #f9f9f9;
+            text-align: center;
+        }
+        .verification-tab input {
+            margin-bottom: 10px;
+        }
+        .verification-tab button {
+            background: #0078d4;
+            border: none;
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .verification-tab button:hover {
+            background: #005a9e;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="header">
+            <img src="https://via.placeholder.com/40" alt="Profile Picture">
+            <div>
+
+            </div>
+        </div>
+        <div class="chat-box" id="chat-box"></div>
+        <div class="chat-input">
+            <input type="text" id="messageInput" placeholder="Type a message">
+            <button id="sendButton">Send</button>
+        </div>
+        <button id="emojiButton" class="btn btn-light" style="position: fixed; bottom: 10px; right: 10px;">😀</button>
+        <div class="emoji-picker" id="emojiPicker">
+            <button onclick="addEmoji('😀')">😀</button>
+            <button onclick="addEmoji('😁')">😁</button>
+            <button onclick="addEmoji('😂')">😂</button>
+            <!-- Ajoutez plus d'emojis ici -->
+        </div>
+    </div>
+
+    <!-- Verification Tab -->
+    <div class="verification-tab" id="verificationTab">
+        <h4>Admin option</h4>
+        <input type="text" id="verificationCode" placeholder="Code">
+        <button onclick="verifyCode()">Verify Code</button>
+    </div>
+
+    <audio id="notificationSound" src="https://www.soundjay.com/button/beep-07.wav" preload="auto"></audio>
+
+    <!-- Modal for Username Edit -->
+    <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editModalLabel">Edit Username</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editUsernameForm">
+                        <div class="mb-3">
+                            <label for="newUsername" class="form-label">New Username</label>
+                            <input type="text" class="form-control" id="newUsername" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Save</button>
+                        <button type="button" class="btn btn-danger" onclick="deleteUsername()">Delete Username</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
+    <script>
+        const chatBox = document.getElementById('chat-box');
+        const messageInput = document.getElementById('messageInput');
+        const sendButton = document.getElementById('sendButton');
+        const emojiButton = document.getElementById('emojiButton');
+        const emojiPicker = document.getElementById('emojiPicker');
+        const notificationSound = document.getElementById('notificationSound');
+        const editModal = new bootstrap.Modal(document.getElementById('editModal'));
+        const editUsernameForm = document.getElementById('editUsernameForm');
+        const newUsernameInput = document.getElementById('newUsername');
+        const verificationTab = document.getElementById('verificationTab');
+        const verificationCodeInput = document.getElementById('verificationCode');
+
+        const VALID_CODE = "123456";  // Code de vérification valide
+
+        function getRandomColor() {
+            const letters = '0123456789ABCDEF';
+            let color = '#';
+            for (let i = 0; i < 6; i++) {
+                color += letters[Math.floor(Math.random() * 16)];
+            }
+            return color;
+        }
+
+        function generateUniqueId() {
+            return 'user-' + Math.random().toString(36).substr(2, 9);
+        }
+
+        function addMessage(text, user = false, replyToId = null) {
+            const username = localStorage.getItem('username') || 'Pseudo';
+            const userId = localStorage.getItem('userId') || generateUniqueId();
+            const color = localStorage.getItem('usernameColor') || getRandomColor();
+            const message = document.createElement('div');
+            message.className = 'message' + (user ? ' user' : '') + (replyToId ? ' reply' : '');
+            message.id = userId; // Add unique id to the message
+            message.innerHTML = `
+                <img src="https://via.placeholder.com/30" alt="Profile Picture">
+                <div>
+                    <p style="color: ${color};">${text}</p>
+                </div>`;
+            
+            // Add click event to reply to this message
+            message.addEventListener('click', () => {
+                messageInput.value = `Replying to: ${text}`;
+                messageInput.dataset.replyTo = userId;
+            });
+
+            chatBox.appendChild(message);
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            // Play notification sound
+            notificationSound.play();
+        }
+
+        function loadMessages() {
+            const messages = JSON.parse(localStorage.getItem('chatMessages')) || [];
+            messages.forEach(message => addMessage(message.text, message.user, message.replyToId));
+        }
+
+        function saveMessage(text, user = false) {
+            const messages = JSON.parse(localStorage.getItem('chatMessages')) || [];
+            const replyToId = messageInput.dataset.replyTo || null;
+            messages.push({ text, timestamp: Date.now(), user, replyToId });
+            localStorage.setItem('chatMessages', JSON.stringify(messages));
+            messageInput.dataset.replyTo = ''; // Clear replyToId after sending
+        }
+
+        function cleanupMessages() {
+            const messages = JSON.parse(localStorage.getItem('chatMessages')) || [];
+            const now = Date.now();
+            const filteredMessages = messages.filter(message => now - message.timestamp < 2 * 60 * 60 * 1000); // 2 heures
+            localStorage.setItem('chatMessages', JSON.stringify(filteredMessages));
+        }
+
+        function addEmoji(emoji) {
+            messageInput.value += emoji;
+            emojiPicker.style.display = 'none';
+        }
+
+        function showEditModal() {
+            const currentUsername = localStorage.getItem('username') || '';
+            newUsernameInput.value = currentUsername;
+            editModal.show();
+        }
+
+        function saveUsername(username) {
+            const color = getRandomColor();
+            localStorage.setItem('username', username);
+            localStorage.setItem('usernameColor', color);
+            usernameSpan.textContent = username;
+            usernameSpan.style.color = color;
+        }
+
+        function deleteUsername() {
+            localStorage.removeItem('username');
+            localStorage.removeItem('usernameColor');
+            localStorage.removeItem('userId');
+            usernameSpan.textContent = 'Pseudo';
+            usernameSpan.style.color = '';
+            editModal.hide();
+        }
+
+        function verifyCode() {
+            const enteredCode = verificationCodeInput.value.trim();
+            if (enteredCode === VALID_CODE) {
+                localStorage.removeItem('chatMessages');
+                chatBox.innerHTML = '';
+                verificationTab.style.display = 'none';
+            } else {
+                alert('Invalid code. Please try again.');
+            }
+        }
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                const text = messageInput.value;
+                if (text.trim()) {
+                    addMessage(text, true);
+                    saveMessage(text, true);
+                    messageInput.value = '';
+                }
+            }
+        });
+
+        sendButton.addEventListener('click', function() {
+            const text = messageInput.value;
+            if (text.trim()) {
+                addMessage(text, true);
+                saveMessage(text, true);
+                messageInput.value = '';
+            }
+        });
+
+        emojiButton.addEventListener('click', function() {
+            emojiPicker.style.display = emojiPicker.style.display === 'none' ? 'block' : 'none';
+        });
+
+        editUsernameForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const newUsername = newUsernameInput.value.trim();
+            if (newUsername) {
+                saveUsername(newUsername);
+                editModal.hide();
+            }
+        });
+
+        loadMessages();
+        setInterval(cleanupMessages, 10 * 60 * 1000);
+
+        // Afficher l'onglet de vérification pour tester
+        setTimeout(() => {
+            verificationTab.style.display = 'block';
+        }, 5000); // Afficher après 5 secondes
+    </script>
+</body>
+<br>    
+<br>    
+<footer><p>By HENRI Anguille 2024</p></footer>
+</html>
